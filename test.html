@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="description" content="Example of use of the D3.js library" />
+    <meta charset="utf-8">
+    <title>D3.js library example</title>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+</head>
+<body>
+<canvas id="main" width="200" height="200" style="border:1px solid     #c3c3c3;">
+    Error: Browser does not support canvas element.
+</canvas>
+<svg id="map" width="960" height="450"></svg>
+<br/>
+
+<script>
+    var main = document.getElementById("main");
+    var render = main.getContext("2d");
+    main.width = 200;
+    main.height = 200;
+    main.style.left = "192px";
+    main.style.top = "50px";
+    main.style.position = "absolute";
+    var MAX_ZOOM_IN = 2.0;
+    var MAX_ZOOM_OUT = 0.2;
+    var zoomStep = 0.2;
+    var actualZoomLevel = 1.0;
+    var MOVE_STEP = 100;
+    var nodes, nodes_data, zoomable_layer, zoom;
+
+    var map = d3.select("#map")
+        .attr("width", 960)
+        .attr("height", 450);
+
+    var container = map.append("g");
+
+
+    var rectangle = container.append("rect")
+        .attr("x", 50)
+        .attr("y", 50)
+        .attr("id", "rect1")
+        .attr("width", 50)
+        .attr("height", 50)
+        .attr("stroke", "#C1272D")
+        .attr("stroke-width", 5)
+        .style("fill", "#f72cd0")
+        .classed('draggable', true);
+
+    var rectangle2 = container.append("rect")
+        .attr("x", 50)
+        .attr("y", 125)
+        .attr("width", 50)
+        .attr("id", "rect2")
+        .attr("height", 50)
+        .attr("stroke", "#C1272D")
+        .attr("stroke-width", 5)
+        .style("fill", "#43f77b")
+        .classed('draggable', true);
+
+    var rectangle3 = container.append("rect")
+        .attr("x", 50)
+        .attr("y", 200)
+        .attr("width", 50)
+        .attr("height", 50)
+        .attr("id", "rect3")
+        .attr("stroke", "#C1272D")
+        .attr("stroke-width", 5)
+        .style("fill", "#46c4f7")
+        .classed('draggable', true);
+
+    var rectangle4 = container.append("rect")
+        .attr("x", 50)
+        .attr("y", 280)
+        .attr("width", 50)
+        .attr("height", 50)
+        .attr("id", "rect4")
+        .attr("stroke", "#C1272D")
+        .attr("stroke-width", 5)
+        .style("fill", "#d0f7a2")
+        .classed('draggable', true);
+
+
+
+
+    //Create the zoom behavior to set for the draw
+    zoom = d3.behavior.zoom().scaleExtent([MAX_ZOOM_OUT, MAX_ZOOM_IN]).on('zoom', zoomed);
+
+    //Function called on the zoom event. It translate the draw on the zoommed point and scale with a certain factor
+    function zoomed() {
+        container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    }
+
+    //Create the drag and drop behavior to set for the objects crated
+    var drag = d3.behavior.drag()
+        .origin(function(d) { return d; })
+        .on("dragstart", dragstarted)
+        .on("drag", dragged);
+
+    //Called when drag event starts. It stop the propagation of the click event
+    function dragstarted(d){
+        d3.event.sourceEvent.stopPropagation();
+    }
+
+    //Called when the drag event occurs (object should be moved)
+    function dragged(d){
+        d.x = d3.event.x;
+        d.y = d3.event.y;
+        //Translate the object on the actual moved point
+        d3.select(this).attr({
+            transform: "translate(" + d.x + "," + d.y + ")"
+        });
+    }
+
+    function runTransitions()
+    {
+        var rectTransition = d3.select("#rect1").transition();
+        rectTransition.attr("transform", "translate(160, 25)").duration(1000);
+    }
+
+    function runSecondTransition()
+    {
+        var rectTransition = d3.select("#rect2").transition();
+        rectTransition.attr("transform", "translate(260,-50)").duration(1000);
+    }
+
+    function runThirdTransition()
+    {
+        var rectTransition = d3.select("#rect3").transition();
+        rectTransition.attr("transform", "translate(160,-50)").duration(1000);
+    }
+
+    function runFourthTransition()
+    {
+        var rectTransition = d3.select("#rect4").transition();
+        rectTransition.attr("transform", "translate(260,-130)").duration(1000);
+    }
+
+
+
+    //Set the zoom behavior on the container variable (the draw), disable mousedown event for the zoom and set the function to call on the double click	event
+    container.call(zoom).on("mousedown.zoom", null).on("dblclick.zoom", zoomIn);
+
+    //Matrix containing the x and y coordinates of the created objects (used for draggable events)
+    nodes_data = [
+        {
+            x: 0,
+            y: 0
+        }, {
+            x: 0,
+            y: 0
+        }, {
+            x: 0,
+            y: 0
+        }
+    ];
+
+
+    //Set the drag behavior on the objects having the "draggable" class and set their position on the viewport (by the "node_data" matrix)
+    nodes = container.selectAll(".draggable").call(drag).data(nodes_data);
+
+    function zoomIn(){
+        //Calculate and set the new zoom level
+        actualZoomLevel = roundFloat(parseFloat(actualZoomLevel) + parseFloat(zoomStep));
+        zoom.scale(actualZoomLevel);
+        //Get the actual position of the container
+        var xPosition = d3.transform(container.attr("transform")).translate[0];
+        var yPosition = d3.transform(container.attr("transform")).translate[1];
+        //Esecute the transformation setting the actual position and the new zoom level
+        container.attr("transform", "translate(" + xPosition + ", " + yPosition + ")scale(" + zoom.scale() + ")");
+    }
+
+
+
+    function roundFloat(value){
+        return value.toFixed(2);
+    }
+
+</script>
+<br/>
+<button id="moveBottom" onclick="runTransitions()">Move Top Box</button>
+<button id="movesecond" onclick="runSecondTransition()">Move Second Box</button>
+<button id="movethird" onclick="runThirdTransition()">Move Third Box</button>
+<button id="movefourth" onclick="runFourthTransition()">Move Fourth Box</button>
+</body>
+</html>
